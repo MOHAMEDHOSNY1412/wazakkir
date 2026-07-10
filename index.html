@@ -1938,7 +1938,11 @@ function showUpdateBanner(reg){
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('sw.js')
+    // updateViaCache:'none' forces the browser to always fetch sw.js fresh
+    // from the network when checking for updates, instead of serving a
+    // stale cached copy of the script itself (a very common reason updates
+    // silently fail to be detected).
+    navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' })
       .then(reg => {
         // If a worker is already waiting, prompt immediately
         if(reg.waiting && navigator.serviceWorker.controller){ showUpdateBanner(reg); }
@@ -1951,6 +1955,15 @@ if ('serviceWorker' in navigator) {
               showUpdateBanner(reg);
             }
           });
+        });
+        // Force an immediate check for updates on load, then re-check
+        // periodically and whenever the app returns to the foreground —
+        // otherwise the browser may only check for updates on its own
+        // schedule (up to once every 24h).
+        reg.update().catch(()=>{});
+        setInterval(() => reg.update().catch(()=>{}), 60 * 60 * 1000); // hourly
+        document.addEventListener('visibilitychange', () => {
+          if(document.visibilityState === 'visible') reg.update().catch(()=>{});
         });
       })
       .catch(err => console.log('SW error:', err));

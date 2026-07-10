@@ -3,7 +3,7 @@
 // Network-First لصفحة التطبيق (لضمان وصول آخر تحديث فورًا)
 // Cache-First للأيقونات والخطوط (أداء أسرع + عمل بدون إنترنت)
 // ===============================================
-const CACHE_NAME = 'wazakkir-v1.2.0';
+const CACHE_NAME = 'wazakkir-v1.3.0';
 const STATIC_ASSETS = [
   'icons/icon-192.png',
   'icons/icon-512.png',
@@ -15,7 +15,10 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS).catch(()=>{}))
   );
-  self.skipWaiting();
+  // NOTE: intentionally NOT calling self.skipWaiting() here.
+  // The new worker stays in "waiting" state until the user taps
+  // "تحديث الآن" (Update banner), which posts SKIP_WAITING to it.
+  // This is what makes the update-available banner possible.
 });
 
 self.addEventListener('activate', event => {
